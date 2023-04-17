@@ -1,3 +1,6 @@
+const { keccak256 } = require("ethereum-cryptography/keccak");
+const secp = require('ethereum-cryptography/secp256k1');
+const { toHex, utf8ToBytes, hexToBytes } = require('ethereum-cryptography/utils');
 const express = require("express");
 const app = express();
 const cors = require("cors");
@@ -7,19 +10,43 @@ app.use(cors());
 app.use(express.json());
 
 const balances = {
-  "0x1": 100,
-  "0x2": 50,
-  "0x3": 75,
+  "f3b71a077e04c840944e": 100,
+  "c6b7ef67695f3d1ab018": 50,
+  "82d88d561e09ba1cd53e": 75,
 };
 
-app.get("/balance/:address", (req, res) => {
-  const { address } = req.params;
+app.get("/balance/:signature", (req, res) => {
+  const { signature } = req.params;
+
+  const bytes = utf8ToBytes('send moneys');
+  const msgHash = keccak256(bytes);
+
+  // recover public key from signature
+  const publicKey = secp.recoverPublicKey(msgHash, hexToBytes(signature), 1);
+  const address = toHex(publicKey).slice(-20);
+
   const balance = balances[address] || 0;
   res.send({ balance });
 });
 
 app.post("/send", (req, res) => {
-  const { sender, recipient, amount } = req.body;
+  const { recipient, signature, amount } = req.body;
+
+  const bytes = utf8ToBytes('send moneys');
+  const msgHash = keccak256(bytes);
+
+  // recover public key from signature
+  const publicKey = secp.recoverPublicKey(msgHash, signature, 1);
+
+  // verify signature against public key
+  const verified = secp.verify(signature, msgHash, publicKey);
+
+  if (!verified) {
+    res.status(400).send({ message: "Not verified!" });
+  }
+
+  // extract address from public key
+  const sender = toHex(publicKey).slice(-20);
 
   setInitialBalance(sender);
   setInitialBalance(recipient);

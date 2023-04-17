@@ -1,13 +1,13 @@
 import server from "./server";
 
-function Wallet({ address, setAddress, balance, setBalance }) {
+function Wallet({ signature, setSignature, balance, setBalance }) {
   async function onChange(evt) {
-    const address = evt.target.value;
-    setAddress(address);
-    if (address) {
+    const signature = evt.target.value;
+    setSignature(signature);
+    if (signature) {
       const {
         data: { balance },
-      } = await server.get(`balance/${address}`);
+      } = await server.get(`balance/${signature}`);
       setBalance(balance);
     } else {
       setBalance(0);
@@ -19,8 +19,8 @@ function Wallet({ address, setAddress, balance, setBalance }) {
       <h1>Your Wallet</h1>
 
       <label>
-        Wallet Address
-        <input placeholder="Type an address, for example: 0x1" value={address} onChange={onChange}></input>
+        Signature
+        <input placeholder="Paste your signature" value={signature} onChange={onChange}></input>
       </label>
 
       <div className="balance">Balance: {balance}</div>
